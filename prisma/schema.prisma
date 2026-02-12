@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CodeStatus {
+  UNUSED
+  REDEEMED
+}
+
+enum OrderStage {
+  NEW
+  CONTACTING
+  BOOKED
+  CANCELLED
+  COMPLETED
+}
+
+enum MessageSender {
+  CUSTOMER
+  ADMIN
+}
+
+model RedemptionCode {
+  id         String     @id @default(cuid())
+  code       String     @unique
+  status     CodeStatus @default(UNUSED)
+  createdAt  DateTime   @default(now())
+  redeemedAt DateTime?
+  order      Order?
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  codeId    String      @unique
+  code      RedemptionCode @relation(fields: [codeId], references: [id])
+  fullName  String
+  email     String
+  roomLink  String?
+  city      String
+  stage     OrderStage @default(NEW)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id        String         @id @default(cuid())
+  orderId   String
+  order     Order          @relation(fields: [orderId], references: [id])
+  sender    MessageSender
+  body      String
+  createdAt DateTime       @default(now())
+}
